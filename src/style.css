@@ -1,0 +1,174 @@
+/* Rota de Fuga: Marco Zero — estilo geral (terminal CRT militar) */
+
+:root {
+  --preto:   #0d0d0d;
+  --concreto:#1a1a1a;
+  --grafite: #262626;
+  --verde:   #39ff14;
+  --verde-op:#39ff1433;
+  --ferrugem:#cc5500;
+  --alerta:  #ff3b30;
+  --texto:   #9fb39a;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #050505;
+  color: var(--texto);
+  font-family: "Courier New", Courier, monospace;
+  overflow: hidden;
+}
+
+#shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 8px 12px 10px;
+}
+
+/* ---------- barra superior ---------- */
+#topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 10px;
+  border: 1px solid #2c2c2c;
+  border-bottom: none;
+  background: linear-gradient(#151515, #0e0e0e);
+  letter-spacing: 3px;
+  font-size: 14px;
+  color: var(--verde);
+  text-shadow: 0 0 6px var(--verde-op);
+}
+.brand { font-weight: bold; }
+.dim { color: #5c6b58; letter-spacing: 2px; }
+
+/* ---------- área de jogo ---------- */
+#stage {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid #2c2c2c;
+  background: #0a0a0a;
+  padding: 10px;
+}
+
+#screen {
+  display: block;
+  background: #000;
+  image-rendering: pixelated;
+  border: 1px solid #333;
+  box-shadow: 0 0 30px #000 inset, 0 0 12px #39ff1411;
+  /* largura fixa da arte (960x544), reduzida proporcionalmente em telas menores */
+  width: min(960px, 100%);
+  aspect-ratio: 960 / 544;
+  height: auto;
+  flex: 0 1 auto;
+  align-self: flex-start;
+}
+
+/* ---------- diário lateral ---------- */
+#journal {
+  flex: 0 0 250px;
+  min-width: 220px;
+  max-width: 300px;
+  align-self: stretch;
+  border: 1px solid #2c2c2c;
+  background: #0c0e0c;
+  padding: 10px 12px;
+  font-size: 12px;
+  overflow-y: auto;
+}
+
+#journal h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  letter-spacing: 4px;
+  color: var(--verde);
+  border-bottom: 1px dashed #2f4a2c;
+  padding-bottom: 6px;
+}
+
+#journal h3 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--ferrugem);
+}
+
+.j-sector { color: #7d8f79; margin-bottom: 8px; }
+.j-block { margin-top: 14px; }
+.j-block p { margin: 0; line-height: 1.55; color: #82927e; }
+.keys { color: #6f7d6c; }
+
+#journal-vars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+#journal-vars li {
+  padding: 3px 6px;
+  margin-bottom: 3px;
+  background: #101710;
+  border-left: 2px solid var(--verde);
+  color: var(--verde);
+  animation: blip .35s ease-out;
+}
+#journal-vars li.empty {
+  background: none;
+  border-left: 2px solid #333;
+  color: #4d574b;
+  font-style: italic;
+  animation: none;
+}
+@keyframes blip {
+  from { background: #39ff1455; transform: translateX(-4px); }
+  to   { background: #101710;   transform: none; }
+}
+
+/* ---------- medidor de ameaça ---------- */
+.threat { letter-spacing: 3px; font-weight: bold; margin-bottom: 5px; }
+.threat.afar     { color: #4f9f4a; }
+.threat.approach { color: var(--ferrugem); animation: pulse 1s infinite; }
+.threat.breach   { color: var(--alerta);   animation: pulse .35s infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+
+#threat-bar {
+  height: 6px;
+  background: #161616;
+  border: 1px solid #2a2a2a;
+}
+#threat-bar i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--verde);
+  transition: width .2s linear, background .4s;
+}
+
+/* ---------- barra inferior ---------- */
+#statusbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border: 1px solid #2c2c2c;
+  border-top: none;
+  background: #0e0e0e;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #6f7d6c;
+}
+#status-msg::before { content: "> "; color: var(--verde); }
+
+@media (max-width: 1100px) {
+  #stage { flex-direction: column; }
+  #journal { max-width: none; }
+}

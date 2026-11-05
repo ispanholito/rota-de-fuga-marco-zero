@@ -1,0 +1,2440 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rota de Fuga: Marco Zero</title>
+<style>
+/* Rota de Fuga: Marco Zero — estilo geral (terminal CRT militar) */
+
+:root {
+  --preto:   #0d0d0d;
+  --concreto:#1a1a1a;
+  --grafite: #262626;
+  --verde:   #39ff14;
+  --verde-op:#39ff1433;
+  --ferrugem:#cc5500;
+  --alerta:  #ff3b30;
+  --texto:   #9fb39a;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #050505;
+  color: var(--texto);
+  font-family: "Courier New", Courier, monospace;
+  overflow: hidden;
+}
+
+#shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 8px 12px 10px;
+}
+
+/* ---------- barra superior ---------- */
+#topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 10px;
+  border: 1px solid #2c2c2c;
+  border-bottom: none;
+  background: linear-gradient(#151515, #0e0e0e);
+  letter-spacing: 3px;
+  font-size: 14px;
+  color: var(--verde);
+  text-shadow: 0 0 6px var(--verde-op);
+}
+.brand { font-weight: bold; }
+.dim { color: #5c6b58; letter-spacing: 2px; }
+
+/* ---------- área de jogo ---------- */
+#stage {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid #2c2c2c;
+  background: #0a0a0a;
+  padding: 10px;
+}
+
+#screen {
+  display: block;
+  background: #000;
+  image-rendering: pixelated;
+  border: 1px solid #333;
+  box-shadow: 0 0 30px #000 inset, 0 0 12px #39ff1411;
+  /* largura fixa da arte (960x544), reduzida proporcionalmente em telas menores */
+  width: min(960px, 100%);
+  aspect-ratio: 960 / 544;
+  height: auto;
+  flex: 0 1 auto;
+  align-self: flex-start;
+}
+
+/* ---------- diário lateral ---------- */
+#journal {
+  flex: 0 0 250px;
+  min-width: 220px;
+  max-width: 300px;
+  align-self: stretch;
+  border: 1px solid #2c2c2c;
+  background: #0c0e0c;
+  padding: 10px 12px;
+  font-size: 12px;
+  overflow-y: auto;
+}
+
+#journal h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  letter-spacing: 4px;
+  color: var(--verde);
+  border-bottom: 1px dashed #2f4a2c;
+  padding-bottom: 6px;
+}
+
+#journal h3 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--ferrugem);
+}
+
+.j-sector { color: #7d8f79; margin-bottom: 8px; }
+.j-block { margin-top: 14px; }
+.j-block p { margin: 0; line-height: 1.55; color: #82927e; }
+.keys { color: #6f7d6c; }
+
+#journal-vars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+#journal-vars li {
+  padding: 3px 6px;
+  margin-bottom: 3px;
+  background: #101710;
+  border-left: 2px solid var(--verde);
+  color: var(--verde);
+  animation: blip .35s ease-out;
+}
+#journal-vars li.empty {
+  background: none;
+  border-left: 2px solid #333;
+  color: #4d574b;
+  font-style: italic;
+  animation: none;
+}
+@keyframes blip {
+  from { background: #39ff1455; transform: translateX(-4px); }
+  to   { background: #101710;   transform: none; }
+}
+
+/* ---------- medidor de ameaça ---------- */
+.threat { letter-spacing: 3px; font-weight: bold; margin-bottom: 5px; }
+.threat.afar     { color: #4f9f4a; }
+.threat.approach { color: var(--ferrugem); animation: pulse 1s infinite; }
+.threat.breach   { color: var(--alerta);   animation: pulse .35s infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+
+#threat-bar {
+  height: 6px;
+  background: #161616;
+  border: 1px solid #2a2a2a;
+}
+#threat-bar i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--verde);
+  transition: width .2s linear, background .4s;
+}
+
+/* ---------- barra inferior ---------- */
+#statusbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border: 1px solid #2c2c2c;
+  border-top: none;
+  background: #0e0e0e;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #6f7d6c;
+}
+#status-msg::before { content: "> "; color: var(--verde); }
+
+@media (max-width: 1100px) {
+  #stage { flex-direction: column; }
+  #journal { max-width: none; }
+}
+
+/* Ajustes exclusivos da versão de arquivo único */
+html, body { height: 100%; }
+#aviso-foco {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.72); color: #39ff14; font: 16px "Courier New", monospace;
+  letter-spacing: 2px; cursor: pointer; z-index: 50; text-align: center; padding: 20px;
+}
+</style>
+
+<div id="shell">
+    <header id="topbar">
+      <span class="brand">ROTA DE FUGA<span class="dim">: MARCO ZERO</span></span>
+      <span id="sector-label" class="dim">SETOR --</span>
+    </header>
+
+    <div id="stage">
+      <canvas id="screen" width="960" height="544"></canvas>
+
+      <!-- Painel lateral: diário do engenheiro -->
+      <aside id="journal">
+        <h2>DIÁRIO</h2>
+        <div id="journal-sector" class="j-sector">--</div>
+        <ul id="journal-vars"><li class="empty">nenhuma variável coletada</li></ul>
+        <div class="j-block">
+          <h3>OBJETIVO</h3>
+          <p id="journal-goal">Localizar o terminal da comporta.</p>
+        </div>
+        <div class="j-block">
+          <h3>AMEAÇA</h3>
+          <div id="threat-state" class="threat afar">DISTANTE</div>
+          <div id="threat-bar"><i></i></div>
+        </div>
+        <div class="j-block">
+          <h3>CONTROLES</h3>
+          <p class="keys">WASD / setas &mdash; mover<br>E &mdash; inspecionar<br>ENTER &mdash; confirmar código<br>ESC &mdash; sair do terminal<br>M &mdash; áudio on/off</p>
+        </div>
+      </aside>
+    </div>
+
+    <footer id="statusbar">
+      <span id="status-msg">Aguardando comandos...</span>
+      <span id="fps" class="dim"></span>
+    </footer>
+  </div>
+
+<div id="aviso-foco">CLIQUE AQUI PARA ATIVAR O TECLADO E O ÁUDIO</div>
+
+<script>
+(function () {
+'use strict';
+// ===== src/engine/utils.js =====
+/**
+ * Utilitários gerais do motor.
+ * Rota de Fuga: Marco Zero — PAC Extensionista / Engenharia de Software.
+ */
+
+const clamp = (v, min, max) => (v < min ? min : v > max ? max : v);
+
+const lerp = (a, b, t) => a + (b - a) * t;
+
+/**
+ * Gerador pseudoaleatório determinístico (Mulberry32).
+ * Usado para gerar texturas sempre idênticas entre execuções — assim o
+ * "ruído" da arte não muda a cada recarga da página.
+ */
+function makeRng(seed = 1337) {
+  let a = seed >>> 0;
+  return function rng() {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Colisão retângulo x retângulo (AABB). */
+function aabb(ax, ay, aw, ah, bx, by, bw, bh) {
+  return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+}
+
+/** Distância euclidiana entre dois pontos. */
+const dist = (x1, y1, x2, y2) => Math.hypot(x1 - x2, y1 - y2);
+
+/** Cria um canvas fora da tela (usado para pré-renderizar sprites e tiles). */
+function offscreen(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  return { canvas: c, ctx };
+}
+
+/** Formata segundos como MM:SS. */
+function formatTime(seconds) {
+  const s = Math.max(0, Math.ceil(seconds));
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
+
+
+// ===== src/engine/input.js =====
+/**
+ * Camada de entrada (teclado).
+ *
+ * Mantém dois conjuntos:
+ *  - `down`: teclas atualmente pressionadas (movimentação contínua);
+ *  - `pressed`: teclas pressionadas neste quadro (ações pontuais, ex.: E, Enter).
+ *
+ * O jogo também consome texto digitado enquanto o terminal CRT está aberto;
+ * por isso existe o modo "captura de texto" (setTextMode).
+ */
+
+const MOVE_KEYS = {
+  KeyW: 'up', ArrowUp: 'up',
+  KeyS: 'down', ArrowDown: 'down',
+  KeyA: 'left', ArrowLeft: 'left',
+  KeyD: 'right', ArrowRight: 'right',
+};
+
+class Input {
+  constructor(target = window) {
+    this.down = new Set();
+    this.pressed = new Set();
+    this.textMode = false;
+    this.textBuffer = '';
+    this.onTextSubmit = null;
+
+    target.addEventListener('keydown', (e) => this._onKeyDown(e));
+    target.addEventListener('keyup', (e) => this.down.delete(e.code));
+    // Se a janela perde o foco, solta todas as teclas (evita "andar sozinho").
+    window.addEventListener('blur', () => this.down.clear());
+  }
+
+  _onKeyDown(e) {
+    // Evita que as setas e a barra de espaço rolem a página.
+    if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
+
+    if (!e.repeat) this.pressed.add(e.code);
+    this.down.add(e.code);
+
+    if (this.textMode) this._handleText(e);
+  }
+
+  _handleText(e) {
+    if (e.key === 'Backspace') {
+      this.textBuffer = this.textBuffer.slice(0, -1);
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'Enter') {
+      if (this.onTextSubmit) this.onTextSubmit(this.textBuffer.trim());
+      return;
+    }
+    // Aceita apenas dígitos e o sinal negativo (respostas podem ser negativas).
+    if (/^[0-9]$/.test(e.key) && this.textBuffer.length < 8) {
+      this.textBuffer += e.key;
+    } else if (e.key === '-' && this.textBuffer.length === 0) {
+      this.textBuffer = '-';
+    }
+  }
+
+  /** Ativa/desativa a captura de dígitos do terminal. */
+  setTextMode(active, onSubmit = null) {
+    this.textMode = active;
+    this.textBuffer = '';
+    this.onTextSubmit = onSubmit;
+  }
+
+  /** Direção de movimento como vetor normalizado. */
+  axis() {
+    let x = 0;
+    let y = 0;
+    for (const code of this.down) {
+      switch (MOVE_KEYS[code]) {
+        case 'up': y -= 1; break;
+        case 'down': y += 1; break;
+        case 'left': x -= 1; break;
+        case 'right': x += 1; break;
+        default: break;
+      }
+    }
+    if (x && y) {
+      const inv = Math.SQRT1_2;
+      x *= inv;
+      y *= inv;
+    }
+    return { x, y };
+  }
+
+  wasPressed(code) {
+    return this.pressed.has(code);
+  }
+
+  anyPressed() {
+    return this.pressed.size > 0;
+  }
+
+  /** Limpa as teclas do quadro. Chamado no fim de cada update. */
+  endFrame() {
+    this.pressed.clear();
+  }
+}
+
+
+// ===== src/engine/audio.js =====
+/**
+ * Áudio sintetizado em tempo real (Web Audio API).
+ *
+ * Decisão de projeto: nenhum arquivo de áudio externo é usado. Todos os sons
+ * exigidos pelo GDD são gerados proceduralmente por osciladores e ruído, o que
+ * (a) elimina dependências de download e questões de licenciamento e
+ * (b) permite modular a trilha em tempo real conforme a ameaça se aproxima
+ *     (o "BPM que acelera" descrito no documento de design).
+ *
+ * Mapa de sons do GDD -> implementação:
+ *   Bunker_Ambient_OST  -> drone industrial (2 osciladores em detune + filtro)
+ *   Siren_Tension_BPM   -> pulso rítmico que acelera conforme o estado da ameaça
+ *   Geiger_Click_FX     -> estalos de ruído branco, taxa ~ proximidade da radiação
+ *   Keyboard_Click_FX   -> clique seco (ruído curto + filtro passa-alta)
+ *   Hydraulic_Lock_FX   -> varredura descendente + sopro de ar (porta abrindo)
+ */
+
+class AudioEngine {
+  constructor() {
+    this.ctx = null;
+    this.enabled = true;
+    this.started = false;
+    this.geigerRate = 0;      // 0..1 — proximidade da radiação
+    this._geigerAcc = 0;
+    this._pulseAcc = 0;
+    this.pulseBpm = 0;        // 0 = sem pulso de tensão
+  }
+
+  /** O navegador só permite criar áudio após um gesto do usuário. */
+  start() {
+    if (this.started) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0.45;
+    this.master.connect(this.ctx.destination);
+    this._startAmbient();
+    this.started = true;
+  }
+
+  toggle() {
+    this.enabled = !this.enabled;
+    if (this.master) {
+      this.master.gain.setTargetAtTime(this.enabled ? 0.45 : 0, this.ctx.currentTime, 0.05);
+    }
+    return this.enabled;
+  }
+
+  /** Drone contínuo de ambientação. */
+  _startAmbient() {
+    const { ctx } = this;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.06;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 320;
+
+    [55, 55.7, 82.5].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      osc.type = i === 2 ? 'triangle' : 'sawtooth';
+      osc.frequency.value = freq;
+      const g = ctx.createGain();
+      g.gain.value = i === 2 ? 0.25 : 0.5;
+      osc.connect(g).connect(filter);
+      osc.start();
+    });
+
+    filter.connect(gain).connect(this.master);
+    this.ambientGain = gain;
+  }
+
+  /** Ruído branco curto — base dos efeitos percussivos. */
+  _noiseBurst(duration, { hp = 0, lp = 20000, volume = 0.3 } = {}) {
+    if (!this.ctx || !this.enabled) return;
+    const { ctx } = this;
+    const frames = Math.max(1, Math.floor(ctx.sampleRate * duration));
+    const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < frames; i++) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / frames); // decaimento linear
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+
+    let node = src;
+    if (hp) {
+      const f = ctx.createBiquadFilter();
+      f.type = 'highpass';
+      f.frequency.value = hp;
+      node = node.connect(f);
+    }
+    if (lp < 20000) {
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = lp;
+      node = node.connect(f);
+    }
+    const g = ctx.createGain();
+    g.gain.value = volume;
+    node.connect(g).connect(this.master);
+    src.start();
+  }
+
+  /** Tom simples com envelope, usado em bipes e varreduras. */
+  _tone(freq, duration, { type = 'square', volume = 0.2, sweepTo = null } = {}) {
+    if (!this.ctx || !this.enabled) return;
+    const { ctx } = this;
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    const t = ctx.currentTime;
+    osc.frequency.setValueAtTime(freq, t);
+    if (sweepTo) osc.frequency.exponentialRampToValueAtTime(Math.max(20, sweepTo), t + duration);
+
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(volume, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+
+    osc.connect(g).connect(this.master);
+    osc.start(t);
+    osc.stop(t + duration + 0.02);
+  }
+
+  // -------- efeitos nomeados (correspondem à tabela de áudio do GDD) --------
+
+  keyboardClick() { this._noiseBurst(0.035, { hp: 2200, volume: 0.28 }); }
+
+  footstep() { this._noiseBurst(0.07, { hp: 180, lp: 1400, volume: 0.10 }); }
+
+  pickup() {
+    this._tone(880, 0.08, { type: 'square', volume: 0.12 });
+    setTimeout(() => this._tone(1320, 0.1, { type: 'square', volume: 0.10 }), 70);
+  }
+
+  error() {
+    this._tone(180, 0.35, { type: 'sawtooth', volume: 0.22, sweepTo: 90 });
+    this._noiseBurst(0.2, { hp: 900, volume: 0.15 });
+  }
+
+  hydraulicUnlock() {
+    this._tone(420, 0.55, { type: 'triangle', volume: 0.2, sweepTo: 110 });
+    this._noiseBurst(0.9, { hp: 300, lp: 3000, volume: 0.22 });
+  }
+
+  doorSlam() { this._noiseBurst(0.45, { hp: 60, lp: 700, volume: 0.35 }); }
+
+  breach() {
+    this._tone(120, 1.2, { type: 'sawtooth', volume: 0.3, sweepTo: 40 });
+    this._noiseBurst(1.0, { lp: 900, volume: 0.4 });
+  }
+
+  victory() {
+    [523, 659, 784, 1046].forEach((f, i) =>
+      setTimeout(() => this._tone(f, 0.28, { type: 'triangle', volume: 0.16 }), i * 150));
+  }
+
+  /** Pulso rítmico de tensão (substitui a trilha quando o tempo aperta). */
+  _tensionPulse() {
+    this._tone(70, 0.16, { type: 'sine', volume: 0.25 });
+    this._noiseBurst(0.12, { hp: 120, lp: 800, volume: 0.12 });
+  }
+
+  /**
+   * Atualização por quadro: dispara estalos do contador Geiger conforme a
+   * proximidade da radiação e o pulso de tensão conforme o BPM atual.
+   */
+  update(dt) {
+    if (!this.ctx || !this.enabled) return;
+
+    if (this.geigerRate > 0.01) {
+      this._geigerAcc += dt * (2 + this.geigerRate * 22);
+      while (this._geigerAcc >= 1) {
+        this._geigerAcc -= 1;
+        this._noiseBurst(0.02, { hp: 3000, volume: 0.05 + this.geigerRate * 0.12 });
+      }
+    }
+
+    if (this.pulseBpm > 0) {
+      this._pulseAcc += dt * (this.pulseBpm / 60);
+      while (this._pulseAcc >= 1) {
+        this._pulseAcc -= 1;
+        this._tensionPulse();
+      }
+    }
+
+    // O drone fica mais presente conforme a pressão aumenta.
+    if (this.ambientGain) {
+      const target = 0.06 + Math.min(0.06, this.pulseBpm / 2400);
+      this.ambientGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.5);
+    }
+  }
+}
+
+
+// ===== src/game/sprites.js =====
+/**
+ * Arte do jogo — gerada proceduralmente em código (pixel art 16x16 escalada 2x).
+ *
+ * Decisão de projeto: não há dependência de arquivos de imagem externos. Todos
+ * os tiles, props e quadros de animação do personagem são desenhados uma única
+ * vez em canvas fora da tela, na inicialização, e depois apenas copiados
+ * (blit) a cada quadro. Isso mantém o custo de renderização baixo e garante
+ * que o projeto rode a partir de qualquer pasta, sem assets faltando.
+ *
+ * Paleta oficial do GDD:
+ *   #1A1A1A  concreto / sombras
+ *   #39FF14  terminais e radiação
+ *   #CC5500  ferrugem e uniforme do engenheiro
+ */
+
+
+const TILE = 32;   // tamanho do tile em pixels de tela
+const GRID = 16;          // resolução lógica da arte (16x16)
+const SCALE = TILE / GRID;
+
+const PAL = {
+  concreto: '#1a1a1a',
+  concretoClaro: '#2a2a2a',
+  concretoTopo: '#343434',
+  piso: '#22261f',
+  pisoAlt: '#2a2f26',
+  junta: '#171a15',
+  ferrugem: '#cc5500',
+  ferrugemEsc: '#7a3300',
+  metal: '#4a4a4a',
+  metalEsc: '#2e2e2e',
+  verde: '#39ff14',
+  verdeEsc: '#1d7a0c',
+  vidro: '#08210a',
+  pele: '#c9a07a',
+  capacete: '#3b3b3b',
+  bota: '#232323',
+  luz: '#e9ffcf',
+  osso: '#cfc9b0',
+  sangue: '#5a1f1f',
+};
+
+/** Desenha um "pixel" lógico (bloco SCALE x SCALE). */
+function px(ctx, x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x * SCALE, y * SCALE, w * SCALE, h * SCALE);
+}
+
+// ---------------------------------------------------------------- TILES
+
+function makeFloor(seed) {
+  const { canvas, ctx } = offscreen(TILE, TILE);
+  const rng = makeRng(seed);
+  px(ctx, 0, 0, 16, 16, PAL.piso);
+  // juntas do piso industrial
+  px(ctx, 0, 0, 16, 1, PAL.junta);
+  px(ctx, 0, 0, 1, 16, PAL.junta);
+  px(ctx, 8, 0, 1, 16, '#1c201a');
+  px(ctx, 0, 8, 16, 1, '#1c201a');
+  // sujeira/manchas determinísticas
+  for (let i = 0; i < 14; i++) {
+    const x = Math.floor(rng() * 16);
+    const y = Math.floor(rng() * 16);
+    px(ctx, x, y, 1, 1, rng() > 0.75 ? PAL.pisoAlt : '#1d211b');
+  }
+  if (rng() > 0.7) px(ctx, 3 + Math.floor(rng() * 8), 4 + Math.floor(rng() * 7), 2, 1, '#221d16');
+  return canvas;
+}
+
+function makeWall(seed) {
+  const { canvas, ctx } = offscreen(TILE, TILE);
+  const rng = makeRng(seed);
+  px(ctx, 0, 0, 16, 16, PAL.concretoClaro);
+  px(ctx, 0, 0, 16, 2, '#3f3f3f');      // topo iluminado
+  px(ctx, 0, 14, 16, 2, '#0d0d0d');            // base em sombra
+  // blocos de concreto
+  px(ctx, 0, 7, 16, 1, '#111');
+  px(ctx, 7, 2, 1, 5, '#111');
+  px(ctx, 11, 8, 1, 6, '#111');
+  // manchas de ferrugem escorrendo
+  for (let i = 0; i < 10; i++) {
+    const x = Math.floor(rng() * 16);
+    const y = 2 + Math.floor(rng() * 12);
+    px(ctx, x, y, 1, 1, rng() > 0.6 ? PAL.concretoClaro : '#151515');
+  }
+  if (rng() > 0.6) px(ctx, 2 + Math.floor(rng() * 12), 3, 1, 4 + Math.floor(rng() * 4), '#3a2410');
+  return canvas;
+}
+
+function makeCrate() {
+  const { canvas, ctx } = offscreen(TILE, TILE);
+  px(ctx, 0, 0, 16, 16, PAL.piso);
+  px(ctx, 1, 2, 14, 13, PAL.ferrugemEsc);
+  px(ctx, 2, 3, 12, 11, PAL.ferrugem);
+  px(ctx, 2, 3, 12, 1, '#e07016');
+  px(ctx, 2, 8, 12, 1, PAL.ferrugemEsc);
+  px(ctx, 7, 3, 2, 11, PAL.ferrugemEsc);
+  px(ctx, 1, 14, 14, 1, '#000');
+  // reforços metálicos
+  px(ctx, 2, 4, 1, 1, PAL.metal);
+  px(ctx, 13, 4, 1, 1, PAL.metal);
+  px(ctx, 2, 12, 1, 1, PAL.metal);
+  px(ctx, 13, 12, 1, 1, PAL.metal);
+  return canvas;
+}
+
+function makeRubble(seed) {
+  const { canvas, ctx } = offscreen(TILE, TILE);
+  const rng = makeRng(seed);
+  px(ctx, 0, 0, 16, 16, PAL.piso);
+  for (let i = 0; i < 9; i++) {
+    const x = Math.floor(rng() * 12);
+    const y = 3 + Math.floor(rng() * 10);
+    const w = 2 + Math.floor(rng() * 3);
+    px(ctx, x, y, w, 2, i % 2 ? PAL.concretoClaro : PAL.metalEsc);
+    px(ctx, x, y, w, 1, '#3a3a3a');
+  }
+  px(ctx, 2, 13, 12, 2, '#101010');
+  return canvas;
+}
+
+function makeRadiation(frame) {
+  const { canvas, ctx } = offscreen(TILE, TILE);
+  px(ctx, 0, 0, 16, 16, PAL.piso);
+  const glow = frame === 0 ? '#1f5c12' : '#276f16';
+  const core = frame === 0 ? '#39ff14' : '#5cff3f';
+  px(ctx, 1, 3, 14, 10, glow);
+  px(ctx, 2, 2, 12, 12, glow);
+  px(ctx, 3, 4, 10, 8, '#2e8a18');
+  px(ctx, 5, 6, 6, 4, core);
+  px(ctx, 4 + frame, 5, 2, 1, '#a5ff8f');
+  px(ctx, 9 - frame, 10, 2, 1, '#a5ff8f');
+  // bolhas
+  px(ctx, 6, 4, 1, 1, '#d9ffcb');
+  px(ctx, 10, 9, 1, 1, '#d9ffcb');
+  return canvas;
+}
+
+function makeTerminal(on) {
+  const { canvas, ctx } = offscreen(TILE, TILE);
+  px(ctx, 0, 0, 16, 16, PAL.piso);
+  px(ctx, 1, 1, 14, 14, PAL.metalEsc);   // gabinete
+  px(ctx, 2, 2, 12, 12, PAL.metal);
+  px(ctx, 3, 3, 10, 8, '#0a0a0a');       // moldura da tela
+  px(ctx, 4, 4, 8, 6, on ? PAL.vidro : '#0c0c0c');
+  if (on) {
+    // linhas de texto no CRT
+    px(ctx, 5, 5, 6, 1, PAL.verde);
+    px(ctx, 5, 7, 4, 1, PAL.verdeEsc);
+    px(ctx, 5, 9, 5, 1, PAL.verde);
+  }
+  px(ctx, 3, 12, 10, 2, '#1f1f1f');      // teclado
+  for (let i = 0; i < 5; i++) px(ctx, 4 + i * 2, 12, 1, 1, '#3d3d3d');
+  px(ctx, 13, 3, 1, 1, on ? PAL.verde : '#5a1f1f'); // LED de status
+  return canvas;
+}
+
+function makeDoor(unlocked) {
+  const { canvas, ctx } = offscreen(TILE, TILE);
+  px(ctx, 0, 0, 16, 16, PAL.concreto);
+  px(ctx, 1, 0, 14, 16, unlocked ? '#1d2a1d' : PAL.metalEsc);
+  px(ctx, 2, 0, 12, 16, unlocked ? '#24361f' : PAL.metal);
+  // faixas de advertência diagonais
+  for (let i = -4; i < 16; i += 4) {
+    px(ctx, 2, i + 2, 12, 1, unlocked ? PAL.verdeEsc : PAL.ferrugem);
+  }
+  px(ctx, 7, 0, 2, 16, '#0e0e0e');        // fenda central
+  px(ctx, 2, 7, 12, 2, '#1a1a1a');        // trinco hidráulico
+  px(ctx, 6, 7, 4, 2, unlocked ? PAL.verde : '#8a1a12');
+  return canvas;
+}
+
+/** Props que escondem variáveis (prontuário, fita cassete, painel). */
+function makeProp(kind) {
+  const { canvas, ctx } = offscreen(TILE, TILE);
+  px(ctx, 0, 0, 16, 16, PAL.piso);
+  if (kind === 'chart') {            // prontuário médico / prancheta
+    px(ctx, 3, 2, 10, 13, '#3a3a34');
+    px(ctx, 4, 3, 8, 11, '#d9d6c2');
+    px(ctx, 6, 2, 4, 2, PAL.metal);
+    px(ctx, 5, 6, 6, 1, '#7a776a');
+    px(ctx, 5, 8, 6, 1, '#7a776a');
+    px(ctx, 5, 10, 4, 1, '#7a776a');
+  } else if (kind === 'tape') {      // fita cassete
+    px(ctx, 2, 4, 12, 9, '#2b2b30');
+    px(ctx, 3, 5, 10, 7, '#43434a');
+    px(ctx, 5, 7, 2, 3, '#15151a');
+    px(ctx, 9, 7, 2, 3, '#15151a');
+    px(ctx, 4, 6, 8, 1, '#9a9aa5');
+  } else if (kind === 'panel') {     // painel elétrico / quadro
+    px(ctx, 2, 2, 12, 12, PAL.metalEsc);
+    px(ctx, 3, 3, 10, 10, '#20242a');
+    px(ctx, 4, 4, 8, 1, PAL.verdeEsc);
+    px(ctx, 4, 6, 5, 1, PAL.ferrugem);
+    px(ctx, 4, 8, 7, 1, PAL.verdeEsc);
+    px(ctx, 4, 10, 3, 1, PAL.ferrugem);
+    px(ctx, 11, 10, 2, 2, '#8a1a12');
+  } else if (kind === 'locker') {    // armário de alojamento
+    px(ctx, 2, 1, 12, 14, PAL.metalEsc);
+    px(ctx, 3, 2, 10, 12, '#3f4640');
+    px(ctx, 8, 2, 1, 12, PAL.metalEsc);
+    px(ctx, 6, 7, 1, 2, '#c9c9c9');
+    px(ctx, 10, 7, 1, 2, '#c9c9c9');
+    px(ctx, 4, 3, 4, 1, '#556056');
+  } else {                            // 'body' — restos, prop narrativo
+    px(ctx, 3, 5, 10, 7, '#2a2622');
+    px(ctx, 5, 4, 4, 4, PAL.osso);
+    px(ctx, 6, 5, 1, 1, '#111');
+    px(ctx, 8, 5, 1, 1, '#111');
+    px(ctx, 4, 11, 8, 2, PAL.sangue);
+  }
+  // brilho de item interativo (canto)
+  px(ctx, 14, 1, 1, 1, PAL.verde);
+  return canvas;
+}
+
+/** Prop já inspecionado — versão apagada. */
+function desaturate(source) {
+  const { canvas, ctx } = offscreen(TILE, TILE);
+  ctx.drawImage(source, 0, 0);
+  ctx.globalCompositeOperation = 'saturation';
+  ctx.fillStyle = '#808080';
+  ctx.fillRect(0, 0, TILE, TILE);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillRect(0, 0, TILE, TILE);
+  return canvas;
+}
+
+// ------------------------------------------------------- PERSONAGEM
+
+/**
+ * Engenheiro sobrevivente — 4 direções cardinais.
+ * frame 0 = parado (Eng_Idle), 1 e 2 = ciclo de caminhada (Eng_Walk),
+ * frame 3 = postura de interação/hacking (Eng_Hack).
+ */
+function makeEngineer(dir, frame) {
+  const { canvas, ctx } = offscreen(TILE, TILE);
+  const step = frame === 1 ? 1 : frame === 2 ? -1 : 0;
+  const hack = frame === 3;
+  const bodyY = hack ? 1 : 0;
+
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(TILE / 2, TILE - 3, 9, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // pernas
+  px(ctx, 5, 12 + bodyY, 2, 3 - bodyY, PAL.bota);
+  px(ctx, 9, 12 + bodyY, 2, 3 - bodyY, PAL.bota);
+  if (step === 1) px(ctx, 5, 14, 3, 1, PAL.bota);
+  if (step === -1) px(ctx, 8, 14, 3, 1, PAL.bota);
+
+  // tronco (macacão laranja)
+  px(ctx, 4, 6 + bodyY, 8, 7, PAL.ferrugemEsc);
+  px(ctx, 5, 6 + bodyY, 6, 6, PAL.ferrugem);
+  px(ctx, 5, 9 + bodyY, 6, 1, PAL.ferrugemEsc);   // cinto de ferramentas
+  px(ctx, 7, 9 + bodyY, 2, 1, '#d8d2c0');         // fivela
+
+  if (dir === 'up') {
+    px(ctx, 5, 5 + bodyY, 6, 4, PAL.metalEsc);    // mochila nas costas
+    px(ctx, 6, 6 + bodyY, 4, 2, PAL.metal);
+  }
+
+  // cabeça + capacete
+  px(ctx, 5, 2 + bodyY, 6, 5, PAL.capacete);
+  px(ctx, 4, 3 + bodyY, 8, 1, '#2b2b2b');         // aba do capacete
+  if (dir === 'down') {
+    px(ctx, 6, 5 + bodyY, 4, 2, PAL.pele);
+    px(ctx, 6, 5 + bodyY, 1, 1, '#101010');
+    px(ctx, 9, 5 + bodyY, 1, 1, '#101010');
+  } else if (dir === 'left') {
+    px(ctx, 5, 5 + bodyY, 3, 2, PAL.pele);
+    px(ctx, 5, 5 + bodyY, 1, 1, '#101010');
+  } else if (dir === 'right') {
+    px(ctx, 8, 5 + bodyY, 3, 2, PAL.pele);
+    px(ctx, 10, 5 + bodyY, 1, 1, '#101010');
+  }
+
+  // lanterna de capacete + braço estendido
+  const lx = dir === 'left' ? 3 : dir === 'right' ? 12 : 7;
+  const ly = dir === 'up' ? 2 : 4;
+  px(ctx, lx, ly + bodyY, 1, 1, PAL.luz);
+
+  if (hack) {
+    // braços à frente, digitando
+    px(ctx, 3, 8, 3, 2, PAL.ferrugem);
+    px(ctx, 10, 8, 3, 2, PAL.ferrugem);
+    px(ctx, 3, 9, 2, 1, PAL.pele);
+    px(ctx, 11, 9, 2, 1, PAL.pele);
+  } else {
+    px(ctx, 3, 7 + bodyY, 2, 4, PAL.ferrugem);
+    px(ctx, 11, 7 + bodyY, 2, 4, PAL.ferrugem);
+  }
+  return canvas;
+}
+
+// ------------------------------------------------------- CATÁLOGO
+
+const Sprites = {
+  floors: [],
+  walls: [],
+  crate: null,
+  rubble: null,
+  rad: [],
+  terminalOn: null,
+  terminalOff: null,
+  doorLocked: null,
+  doorOpen: null,
+  props: {},
+  propsUsed: {},
+  engineer: {},
+};
+
+/** Pré-renderiza todos os sprites. Chamado uma vez no boot. */
+function buildSprites() {
+  for (let i = 0; i < 4; i++) Sprites.floors.push(makeFloor(101 + i * 37));
+  for (let i = 0; i < 3; i++) Sprites.walls.push(makeWall(9001 + i * 17));
+  Sprites.crate = makeCrate();
+  Sprites.rubble = makeRubble(555);
+  Sprites.rad = [makeRadiation(0), makeRadiation(1)];
+  Sprites.terminalOn = makeTerminal(true);
+  Sprites.terminalOff = makeTerminal(false);
+  Sprites.doorLocked = makeDoor(false);
+  Sprites.doorOpen = makeDoor(true);
+
+  for (const kind of ['chart', 'tape', 'panel', 'locker', 'body']) {
+    Sprites.props[kind] = makeProp(kind);
+    Sprites.propsUsed[kind] = desaturate(Sprites.props[kind]);
+  }
+
+  for (const dir of ['down', 'up', 'left', 'right']) {
+    Sprites.engineer[dir] = [0, 1, 2, 3].map((f) => makeEngineer(dir, f));
+  }
+  return Sprites;
+}
+
+
+// ===== src/game/level.js =====
+/**
+ * Setor carregado em memória: converte o mapa em texto numa grade de tiles
+ * consultável e expõe as funções de colisão usadas pelo jogador.
+ */
+
+
+const T = {
+  FLOOR: 0,
+  WALL: 1,
+  CRATE: 2,
+  RUBBLE: 3,
+  RAD: 4,
+  TERMINAL: 5,
+  DOOR: 6,
+  PROP: 7,
+};
+
+const CHAR_TO_TILE = {
+  '#': T.WALL,
+  '.': T.FLOOR,
+  C: T.CRATE,
+  '~': T.RUBBLE,
+  R: T.RAD,
+  T: T.TERMINAL,
+  D: T.DOOR,
+  P: T.FLOOR,
+};
+
+/** Tiles que impedem a passagem (a comporta é tratada à parte). */
+const SOLID = new Set([T.WALL, T.CRATE, T.RUBBLE, T.TERMINAL, T.PROP]);
+
+class Level {
+  constructor(def) {
+    this.def = def;
+    this.sector = def.sector;
+    this.name = def.name;
+    this.width = def.map[0].length;
+    this.height = def.map.length;
+    this.tiles = [];
+    this.props = [];          // objetos com pistas
+    this.spawn = { x: TILE * 1.5, y: TILE * 1.5 };
+    this.terminal = null;
+    this.door = null;
+    this.doorUnlocked = false;
+    this.variants = [];       // variação visual do piso/parede por tile
+
+    const rng = makeRng(def.sector * 7919);
+
+    for (let y = 0; y < this.height; y++) {
+      const row = [];
+      const vrow = [];
+      for (let x = 0; x < this.width; x++) {
+        const ch = def.map[y][x];
+        vrow.push(Math.floor(rng() * 4));
+
+        if (ch === 'P') {
+          this.spawn = { x: x * TILE + TILE / 2, y: y * TILE + TILE / 2 };
+          row.push(T.FLOOR);
+        } else if (/[1-9]/.test(ch)) {
+          const clue = def.clues[Number(ch) - 1];
+          this.props.push({
+            gx: x,
+            gy: y,
+            x: x * TILE,
+            y: y * TILE,
+            clue,
+            collected: false,
+          });
+          row.push(T.PROP);
+        } else {
+          const tile = CHAR_TO_TILE[ch];
+          if (tile === undefined) {
+            throw new Error(`Setor ${def.sector}: caractere de mapa desconhecido "${ch}" em (${x},${y})`);
+          }
+          if (tile === T.TERMINAL) this.terminal = { gx: x, gy: y, x: x * TILE, y: y * TILE };
+          if (tile === T.DOOR) this.door = { gx: x, gy: y, x: x * TILE, y: y * TILE };
+          row.push(tile);
+        }
+      }
+      this.tiles.push(row);
+      this.variants.push(vrow);
+    }
+  }
+
+  tileAt(gx, gy) {
+    if (gx < 0 || gy < 0 || gy >= this.height || gx >= this.width) return T.WALL;
+    return this.tiles[gy][gx];
+  }
+
+  /** Tile na coordenada em pixels. */
+  tileAtPixel(x, y) {
+    return this.tileAt(Math.floor(x / TILE), Math.floor(y / TILE));
+  }
+
+  /** A comporta só deixa passar depois que o código correto é inserido. */
+  isSolidTile(tile) {
+    if (tile === T.DOOR) return !this.doorUnlocked;
+    return SOLID.has(tile);
+  }
+
+  /** Testa um retângulo (hitbox do jogador) contra a grade. */
+  rectCollides(x, y, w, h) {
+    const x0 = Math.floor(x / TILE);
+    const x1 = Math.floor((x + w - 1) / TILE);
+    const y0 = Math.floor(y / TILE);
+    const y1 = Math.floor((y + h - 1) / TILE);
+    for (let gy = y0; gy <= y1; gy++) {
+      for (let gx = x0; gx <= x1; gx++) {
+        if (this.isSolidTile(this.tileAt(gx, gy))) return true;
+      }
+    }
+    return false;
+  }
+
+  /** Intensidade de radiação sentida numa posição (0..1), usada pelo Geiger. */
+  radiationNear(px, py, radiusTiles = 3) {
+    const gx = Math.floor(px / TILE);
+    const gy = Math.floor(py / TILE);
+    let best = 0;
+    for (let y = gy - radiusTiles; y <= gy + radiusTiles; y++) {
+      for (let x = gx - radiusTiles; x <= gx + radiusTiles; x++) {
+        if (this.tileAt(x, y) !== T.RAD) continue;
+        const d = Math.hypot(x - gx, y - gy);
+        best = Math.max(best, 1 - d / (radiusTiles + 1));
+      }
+    }
+    return best;
+  }
+
+  /** Há um caixote adjacente? (furtividade: mais lento, porém silencioso) */
+  hasCoverNear(gx, gy) {
+    for (let y = gy - 1; y <= gy + 1; y++) {
+      for (let x = gx - 1; x <= gx + 1; x++) {
+        if (this.tileAt(x, y) === T.CRATE) return true;
+      }
+    }
+    return false;
+  }
+
+  /** Objeto interativo (prop ou terminal) ao alcance do jogador. */
+  interactableAt(px, py, reach = TILE * 1.35) {
+    const cx = px;
+    const cy = py;
+    let closest = null;
+    let bestDist = Infinity;
+
+    for (const prop of this.props) {
+      if (prop.collected) continue;
+      const d = Math.hypot(prop.x + TILE / 2 - cx, prop.y + TILE / 2 - cy);
+      if (d < reach && d < bestDist) { bestDist = d; closest = { type: 'prop', prop }; }
+    }
+    if (this.terminal) {
+      const d = Math.hypot(this.terminal.x + TILE / 2 - cx, this.terminal.y + TILE / 2 - cy);
+      if (d < reach && d < bestDist) { bestDist = d; closest = { type: 'terminal' }; }
+    }
+    return closest;
+  }
+
+  /** O jogador alcançou a comporta destrancada? */
+  atExit(px, py) {
+    if (!this.doorUnlocked || !this.door) return false;
+    return Math.hypot(this.door.x + TILE / 2 - px, this.door.y + TILE / 2 - py) < TILE * 0.9;
+  }
+
+  get totalClues() { return this.props.length; }
+  get collectedClues() { return this.props.filter((p) => p.collected).length; }
+}
+
+
+// ===== src/game/terminal.js =====
+/**
+ * Terminal de Criptografia — o sistema central de puzzle.
+ *
+ * Entradas : variáveis coletadas no setor + dígitos digitados pelo jogador.
+ * Processo : compara o valor digitado com a resposta da expressão do setor.
+ * Saídas   : destranca a comporta, ou dispara o alarme (penalidade de tempo).
+ *
+ * A interface é diegética: o jogador "usa" um console CRT dentro do mundo,
+ * e não um menu de quiz sobreposto ao jogo.
+ */
+
+class Terminal {
+  constructor(level, journal) {
+    this.level = level;
+    this.journal = journal;
+    this.open = false;
+    this.attempts = 0;
+    this.solved = false;
+    this.log = [];
+    this.cursorBlink = 0;
+  }
+
+  get puzzle() { return this.level.def.puzzle; }
+
+  /** Monta as linhas de texto exibidas no monitor. */
+  openTerminal() {
+    this.open = true;
+    this.log = [
+      this.puzzle.terminalHeader,
+      '',
+      'STATUS......: TRANCADA',
+      'CRIPTOGRAFIA: ATIVA',
+      '',
+      `EXPRESSÃO DE ACESSO: ${this.puzzle.display}`,
+    ];
+
+    const known = this.journal.entries();
+    if (known.length) {
+      this.log.push('', 'VARIÁVEIS RECONHECIDAS:');
+      known.forEach(({ key, value }) => this.log.push(`  ${key} = ${value}`));
+    } else {
+      this.log.push('', 'NENHUMA VARIÁVEL RECONHECIDA.',
+        'VASCULHE O SETOR ANTES DE TENTAR O CÓDIGO.');
+    }
+
+    const missing = this.missingVariables();
+    if (missing.length) {
+      this.log.push('', `PENDENTE: ${missing.join(', ')}`);
+    } else {
+      this.log.push('', 'DADOS SUFICIENTES. INSIRA O RESULTADO.');
+    }
+  }
+
+  close() {
+    this.open = false;
+  }
+
+  missingVariables() {
+    const known = new Set(this.journal.entries().map((e) => e.key));
+    return this.level.def.clues.map((c) => c.key).filter((k) => !known.has(k));
+  }
+
+  /**
+   * Avalia o código digitado.
+   * @returns {{status: 'ok'|'wrong'|'empty'|'incomplete', message: string}}
+   */
+  submit(raw) {
+    const text = String(raw).trim();
+    if (text === '' || text === '-') {
+      return { status: 'empty', message: 'CAMPO VAZIO. DIGITE O RESULTADO.' };
+    }
+    if (this.missingVariables().length) {
+      return {
+        status: 'incomplete',
+        message: `DADOS INSUFICIENTES: FALTA ${this.missingVariables().join(', ')}.`,
+      };
+    }
+
+    this.attempts++;
+    const value = Number(text);
+    if (Number.isFinite(value) && value === this.puzzle.answer) {
+      this.solved = true;
+      this.level.doorUnlocked = true;
+      return { status: 'ok', message: 'CÓDIGO ACEITO. TRINCOS LIBERADOS.' };
+    }
+    return {
+      status: 'wrong',
+      message: `CÓDIGO REJEITADO (${text}). ALARME ACIONADO.`,
+    };
+  }
+}
+
+/** Diário do engenheiro: registro automático das variáveis encontradas. */
+class Journal {
+  constructor() {
+    this.map = new Map();
+    this.lastAdded = null;
+  }
+
+  add(key, value) {
+    this.map.set(key, value);
+    this.lastAdded = key;
+  }
+
+  has(key) { return this.map.has(key); }
+
+  entries() {
+    return [...this.map.entries()].map(([key, value]) => ({ key, value }));
+  }
+
+  clear() {
+    this.map.clear();
+    this.lastAdded = null;
+  }
+}
+
+
+// ===== src/game/threat.js =====
+/**
+ * Sistema de Ameaça — o "cronômetro invisível" descrito no GDD.
+ *
+ * Não existe inimigo desenhado em tela: a pressão é sonora e temporal.
+ * A máquina de estados segue o documento:
+ *   AFAR     — ruídos distantes, tempo seguro para explorar;
+ *   APPROACH — passos no corredor, trilha acelera;
+ *   BREACH   — invasão do setor: fim de jogo.
+ *
+ * Duas ações do jogador alteram o cronômetro:
+ *   - permanecer em cobertura (colado a caixotes) desacelera o avanço;
+ *   - errar o código no terminal dispara o alarme e adianta a ameaça.
+ */
+
+const ThreatState = {
+  AFAR: 'AFAR',
+  APPROACH: 'APPROACH',
+  BREACH: 'BREACH',
+};
+
+class Threat {
+  constructor(totalTime) {
+    this.total = totalTime;
+    this.remaining = totalTime;
+    this.state = ThreatState.AFAR;
+    this.slamTimer = 4;
+  }
+
+  get ratio() { return Math.max(0, this.remaining / this.total); }
+
+  /** Penalidade por código incorreto: o alarme entrega a posição do jogador. */
+  penalize(seconds = 10) {
+    this.remaining = Math.max(0, this.remaining - seconds);
+  }
+
+  update(dt, { inCover }, audio) {
+    // Em cobertura o jogador faz menos ruído, e os saqueadores demoram mais.
+    const rate = inCover ? 0.6 : 1;
+    this.remaining = Math.max(0, this.remaining - dt * rate);
+
+    const previous = this.state;
+    if (this.remaining <= 0) this.state = ThreatState.BREACH;
+    else if (this.ratio < 0.35) this.state = ThreatState.APPROACH;
+    else this.state = ThreatState.AFAR;
+
+    // Trilha de tensão: BPM cresce conforme o tempo se esgota.
+    if (this.state === ThreatState.AFAR) audio.pulseBpm = 0;
+    else if (this.state === ThreatState.APPROACH) audio.pulseBpm = 70 + (1 - this.ratio / 0.35) * 70;
+    else audio.pulseBpm = 0;
+
+    // Batidas ocasionais nas comportas anteriores — ficam mais frequentes.
+    this.slamTimer -= dt;
+    if (this.slamTimer <= 0) {
+      this.slamTimer = 2 + this.ratio * 9;
+      if (this.state !== ThreatState.BREACH) audio.doorSlam();
+    }
+
+    if (previous !== ThreatState.BREACH && this.state === ThreatState.BREACH) {
+      audio.breach();
+      return { breached: true };
+    }
+    return { breached: false };
+  }
+
+  /** Texto exibido no painel lateral. */
+  label() {
+    switch (this.state) {
+      case ThreatState.APPROACH: return 'APROXIMANDO';
+      case ThreatState.BREACH: return 'INVASÃO';
+      default: return 'DISTANTE';
+    }
+  }
+}
+
+
+// ===== src/game/player.js =====
+/**
+ * Engenheiro sobrevivente — movimentação, colisão e contaminação.
+ *
+ * Regras vindas do GDD:
+ *  - sem ataques: as únicas respostas ao perigo são desviar e se esconder;
+ *  - andar colado a caixotes reduz a velocidade em 50%, mas zera o ruído
+ *    (o que desacelera a aproximação dos saqueadores);
+ *  - pisar em radiação carrega a barra RAD; com a barra saturada o
+ *    personagem perde vida e fica mais lento.
+ */
+
+
+const SPEED = 118;          // px/s
+const HITBOX = 18;          // largura/altura da caixa de colisão
+const RAD_GAIN = 26;        // pontos de RAD por segundo dentro da poça
+const RAD_DECAY = 9;        // recuperação por segundo fora da poça
+const HP_DRAIN = 9;         // dano por segundo com RAD saturada
+
+class Player {
+  constructor(level) {
+    this.x = level.spawn.x;
+    this.y = level.spawn.y;
+    this.dir = 'down';
+    this.frame = 0;
+    this.animTime = 0;
+    this.moving = false;
+    this.hacking = false;
+    this.hp = 100;
+    this.rad = 0;
+    this.inCover = false;
+    this.stepTimer = 0;
+  }
+
+  get gx() { return Math.floor(this.x / TILE); }
+  get gy() { return Math.floor(this.y / TILE); }
+
+  /** Velocidade efetiva considerando cobertura e contaminação. */
+  currentSpeed() {
+    let speed = SPEED;
+    if (this.inCover) speed *= 0.5;      // furtividade: devagar e silencioso
+    if (this.rad >= 100) speed *= 0.55;  // saturação: visão e passos degradados
+    return speed;
+  }
+
+  update(dt, input, level, audio) {
+    const axis = this.hacking ? { x: 0, y: 0 } : input.axis();
+    this.inCover = level.hasCoverNear(this.gx, this.gy);
+
+    const speed = this.currentSpeed();
+    const half = HITBOX / 2;
+
+    // --- movimento com resolução de colisão eixo a eixo ---
+    if (axis.x) {
+      const nx = this.x + axis.x * speed * dt;
+      if (!level.rectCollides(nx - half, this.y - half, HITBOX, HITBOX)) this.x = nx;
+      this.dir = axis.x > 0 ? 'right' : 'left';
+    }
+    if (axis.y) {
+      const ny = this.y + axis.y * speed * dt;
+      if (!level.rectCollides(this.x - half, ny - half, HITBOX, HITBOX)) this.y = ny;
+      this.dir = axis.y > 0 ? 'down' : 'up';
+    }
+
+    this.moving = Boolean(axis.x || axis.y);
+
+    // --- animação (Eng_Idle / Eng_Walk / Eng_Hack) ---
+    if (this.hacking) {
+      this.frame = 3;
+    } else if (this.moving) {
+      this.animTime += dt;
+      const cycle = 0.3;
+      this.frame = Math.floor(this.animTime / cycle) % 2 === 0 ? 1 : 2;
+
+      // passos audíveis apenas fora de cobertura
+      this.stepTimer -= dt;
+      if (this.stepTimer <= 0) {
+        this.stepTimer = 0.34;
+        if (!this.inCover) audio.footstep();
+      }
+    } else {
+      this.animTime = 0;
+      this.frame = 0;
+    }
+
+    // --- radiação ---
+    const onRad = level.tileAtPixel(this.x, this.y) === T.RAD;
+    if (onRad) this.rad = clamp(this.rad + RAD_GAIN * dt, 0, 100);
+    else this.rad = clamp(this.rad - RAD_DECAY * dt, 0, 100);
+
+    if (this.rad >= 100) this.hp = clamp(this.hp - HP_DRAIN * dt, 0, 100);
+
+    // intensidade do contador Geiger para o motor de áudio
+    audio.geigerRate = onRad ? 1 : level.radiationNear(this.x, this.y);
+
+    return { onRad, dead: this.hp <= 0 };
+  }
+}
+
+
+// ===== src/game/renderer.js =====
+/**
+ * Renderização — mundo, iluminação, HUD, terminal CRT e telas de estado.
+ *
+ * A atmosfera pedida pelo GDD (claustrofobia, escuridão, monitor verde-fósforo)
+ * é obtida por três camadas sobrepostas ao mundo:
+ *   1. máscara de escuridão recortada pelo facho da lanterna;
+ *   2. tinta verde/vermelha conforme radiação e nível de ameaça;
+ *   3. scanlines e vinheta simulando um monitor CRT antigo.
+ */
+
+
+const W = 960;
+const H = 544;
+const HUD_H = 34;
+
+class Renderer {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.ctx.imageSmoothingEnabled = false;
+    this.light = offscreen(W, H);   // camada de escuridão/iluminação
+    this.time = 0;
+    this.shake = 0;
+  }
+
+  /** Sacode a tela (erro de código, invasão). */
+  kick(amount = 6) { this.shake = amount; }
+
+  // ------------------------------------------------------------- utilidades
+  _text(text, x, y, { size = 16, color = '#39ff14', align = 'left', glow = true, font = 'monospace' } = {}) {
+    const { ctx } = this;
+    ctx.save();
+    ctx.font = `${size}px ${font}`;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'alphabetic';
+    if (glow) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8;
+    }
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  _bar(x, y, w, h, ratio, color, label) {
+    const { ctx } = this;
+    ctx.fillStyle = '#0c0c0c';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = '#3a3a3a';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    ctx.fillStyle = color;
+    ctx.fillRect(x + 2, y + 2, Math.max(0, (w - 4) * clamp(ratio, 0, 1)), h - 4);
+    if (label) this._text(label, x - 6, y + h - 2, { size: 11, color: '#7d8f79', align: 'right', glow: false });
+  }
+
+  // ------------------------------------------------------------- mundo
+  drawWorld(state, dt) {
+    const { ctx } = this;
+    this.time += dt;
+
+    ctx.save();
+    if (this.shake > 0) {
+      ctx.translate((Math.random() - 0.5) * this.shake, (Math.random() - 0.5) * this.shake);
+      this.shake = Math.max(0, this.shake - dt * 22);
+    }
+
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, W, H);
+
+    const { level, player } = state;
+    const radFrame = Math.floor(this.time * 3) % 2;
+
+    // --- tiles ---
+    for (let gy = 0; gy < level.height; gy++) {
+      for (let gx = 0; gx < level.width; gx++) {
+        const tile = level.tiles[gy][gx];
+        const v = level.variants[gy][gx];
+        const px = gx * TILE;
+        const py = gy * TILE;
+        switch (tile) {
+          case T.WALL:
+            ctx.drawImage(Sprites.walls[v % Sprites.walls.length], px, py);
+            break;
+          case T.CRATE:
+            ctx.drawImage(Sprites.floors[v], px, py);
+            ctx.drawImage(Sprites.crate, px, py);
+            break;
+          case T.RUBBLE:
+            ctx.drawImage(Sprites.floors[v], px, py);
+            ctx.drawImage(Sprites.rubble, px, py);
+            break;
+          case T.RAD:
+            ctx.drawImage(Sprites.rad[radFrame], px, py);
+            break;
+          case T.TERMINAL:
+            ctx.drawImage(Sprites.floors[v], px, py);
+            ctx.drawImage(state.terminal.solved ? Sprites.terminalOff : Sprites.terminalOn, px, py);
+            break;
+          case T.DOOR:
+            ctx.drawImage(level.doorUnlocked ? Sprites.doorOpen : Sprites.doorLocked, px, py);
+            break;
+          case T.PROP:
+            ctx.drawImage(Sprites.floors[v], px, py);
+            break;
+          default:
+            ctx.drawImage(Sprites.floors[v], px, py);
+        }
+      }
+    }
+
+    // --- props com pista ---
+    for (const prop of level.props) {
+      const kind = prop.clue.prop;
+      const sprite = prop.collected ? Sprites.propsUsed[kind] : Sprites.props[kind];
+      ctx.drawImage(sprite, prop.x, prop.y);
+      if (!prop.collected) {
+        // contorno pulsante indicando que o objeto é interativo
+        const a = 0.35 + Math.sin(this.time * 4 + prop.gx) * 0.25;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.strokeStyle = '#39ff14';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(prop.x + 1.5, prop.y + 1.5, TILE - 3, TILE - 3);
+        ctx.shadowColor = '#39ff14';
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = '#39ff14';
+        ctx.fillRect(prop.x + TILE / 2 - 2, prop.y - 4, 4, 3);
+        ctx.restore();
+      }
+    }
+
+    // --- jogador ---
+    const sprite = Sprites.engineer[player.dir][player.frame];
+    ctx.drawImage(sprite, Math.round(player.x - TILE / 2), Math.round(player.y - TILE / 2 - 4));
+
+    // --- iluminação ---
+    this._drawLighting(state);
+
+    // --- prompt de interação ---
+    const target = level.interactableAt(player.x, player.y);
+    if (target && !state.terminal.open) {
+      const label = target.type === 'terminal' ? '[E] acessar terminal' : '[E] inspecionar';
+      const tx = target.type === 'terminal' ? level.terminal.x + TILE / 2 : target.prop.x + TILE / 2;
+      const ty = target.type === 'terminal' ? level.terminal.y : target.prop.y;
+      this._text(label, tx, ty - 8, { size: 12, align: 'center' });
+    }
+
+    // --- comporta liberada ---
+    if (level.doorUnlocked && level.door) {
+      this._text('SAÍDA', level.door.x + TILE / 2, level.door.y - 6,
+        { size: 12, align: 'center', color: '#39ff14' });
+    }
+
+    ctx.restore();
+
+    this.drawHud(state);
+    if (state.toast) this.drawToast(state.toast);
+    this.drawCrtOverlay(state);
+  }
+
+  /** Escuridão do bunker recortada pelo facho da lanterna. */
+  _drawLighting(state) {
+    const { player, level, threat } = state;
+    const lc = this.light.ctx;
+
+    lc.globalCompositeOperation = 'source-over';
+    lc.fillStyle = 'rgba(0,0,0,0.82)';
+    lc.fillRect(0, 0, W, H);
+
+    lc.globalCompositeOperation = 'destination-out';
+
+    // facho principal (raio pulsa levemente)
+    const radius = 210 + Math.sin(this.time * 2.4) * 6 - (player.rad >= 100 ? 45 : 0);
+    let g = lc.createRadialGradient(player.x, player.y, 16, player.x, player.y, radius);
+    g.addColorStop(0, 'rgba(0,0,0,1)');
+    g.addColorStop(0.45, 'rgba(0,0,0,0.94)');
+    g.addColorStop(0.78, 'rgba(0,0,0,0.55)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    lc.fillStyle = g;
+    lc.beginPath();
+    lc.arc(player.x, player.y, radius, 0, Math.PI * 2);
+    lc.fill();
+
+    // brilho próprio dos terminais e das poças de radiação
+    const glows = [];
+    if (level.terminal) glows.push({ x: level.terminal.x + 16, y: level.terminal.y + 16, r: 96 });
+    for (let gy = 0; gy < level.height; gy++) {
+      for (let gx = 0; gx < level.width; gx++) {
+        if (level.tiles[gy][gx] === T.RAD) glows.push({ x: gx * TILE + 16, y: gy * TILE + 16, r: 52 });
+      }
+    }
+    for (const glow of glows) {
+      g = lc.createRadialGradient(glow.x, glow.y, 2, glow.x, glow.y, glow.r);
+      g.addColorStop(0, 'rgba(0,0,0,0.85)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      lc.fillStyle = g;
+      lc.beginPath();
+      lc.arc(glow.x, glow.y, glow.r, 0, Math.PI * 2);
+      lc.fill();
+    }
+
+    lc.globalCompositeOperation = 'source-over';
+    this.ctx.drawImage(this.light.canvas, 0, 0);
+
+    // tinta ambiente: verde quando contaminado, vermelho quando invadido
+    const { ctx } = this;
+    if (player.rad > 40) {
+      ctx.fillStyle = `rgba(57,255,20,${(player.rad - 40) / 100 * 0.16})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+    if (threat && threat.ratio < 0.35) {
+      const intensity = (0.35 - threat.ratio) / 0.35;
+      ctx.fillStyle = `rgba(255,40,20,${intensity * 0.13 * (0.6 + Math.sin(this.time * 6) * 0.4)})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  // ------------------------------------------------------------- HUD
+  drawHud(state) {
+    const { ctx } = this;
+    const { player, threat, level } = state;
+
+    ctx.fillStyle = 'rgba(6,8,6,0.82)';
+    ctx.fillRect(0, 0, W, HUD_H);
+    ctx.strokeStyle = '#233020';
+    ctx.beginPath();
+    ctx.moveTo(0, HUD_H + 0.5);
+    ctx.lineTo(W, HUD_H + 0.5);
+    ctx.stroke();
+
+    this._text(`SETOR ${level.sector} // ${level.name}`, 12, 22, { size: 13 });
+
+    this._bar(320, 10, 120, 14, player.hp / 100, '#39ff14', 'HP');
+    this._bar(500, 10, 120, 14, player.rad / 100,
+      player.rad >= 100 ? '#ff3b30' : '#cc5500', 'RAD');
+
+    this._text(`PISTAS ${level.collectedClues}/${level.totalClues}`, 660, 22,
+      { size: 13, color: '#7d8f79', glow: false });
+
+    const critical = threat.ratio < 0.35;
+    this._text(formatTime(threat.remaining), W - 14, 22, {
+      size: 16,
+      align: 'right',
+      color: critical ? '#ff3b30' : '#39ff14',
+    });
+
+    if (player.inCover) {
+      this._text('EM COBERTURA', 12, H - 12, { size: 12, color: '#4f9f4a' });
+    }
+  }
+
+  /** Caixa de texto no rodapé (documentos inspecionados, avisos). */
+  drawToast(toast) {
+    const { ctx } = this;
+    const boxH = 62;
+    const y = H - boxH - 10;
+    ctx.fillStyle = 'rgba(4,10,4,0.92)';
+    ctx.fillRect(20, y, W - 40, boxH);
+    ctx.strokeStyle = '#2f6b26';
+    ctx.strokeRect(20.5, y + 0.5, W - 41, boxH - 1);
+
+    const words = toast.text.split(' ');
+    const lines = [];
+    let line = '';
+    ctx.font = '14px monospace';
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (ctx.measureText(test).width > W - 80) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+
+    lines.slice(0, 3).forEach((l, i) => {
+      this._text(l, 36, y + 26 + i * 18, { size: 14, color: toast.color || '#c8f5bd', glow: false });
+    });
+  }
+
+  /** Scanlines + vinheta — o mundo visto por um monitor antigo. */
+  drawCrtOverlay(state) {
+    const { ctx } = this;
+    ctx.save();
+    ctx.globalAlpha = 0.10;
+    ctx.fillStyle = '#000';
+    for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
+    ctx.restore();
+
+    const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.85);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(0,0,0,0.55)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    if (state && state.player && state.player.rad >= 100) {
+      // distorção horizontal quando a barra RAD satura
+      ctx.save();
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = '#39ff14';
+      const y = (this.time * 260) % H;
+      ctx.fillRect(0, y, W, 6);
+      ctx.restore();
+    }
+  }
+
+  // ------------------------------------------------------------- terminal
+  drawTerminal(state) {
+    const { ctx } = this;
+    const terminal = state.terminal;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.86)';
+    ctx.fillRect(0, 0, W, H);
+
+    const bx = 150;
+    const by = 60;
+    const bw = W - 300;
+    const bh = H - 130;
+
+    ctx.fillStyle = '#04120544';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.strokeStyle = '#39ff14';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bx, by, bw, bh);
+
+    terminal.log.forEach((line, i) => {
+      this._text(line, bx + 28, by + 40 + i * 20, { size: 15 });
+    });
+
+    // campo de entrada
+    const inputY = by + bh - 58;
+    ctx.strokeStyle = '#1f7a12';
+    ctx.strokeRect(bx + 28, inputY - 22, bw - 56, 32);
+    const cursor = Math.floor(this.time * 2) % 2 ? '_' : ' ';
+    this._text(`> ${state.inputBuffer}${cursor}`, bx + 40, inputY, { size: 18 });
+
+    this._text('ENTER confirma   //   ESC cancela', bx + 28, by + bh - 16,
+      { size: 12, color: '#4f7a48', glow: false });
+
+    if (state.terminalFeedback) {
+      this._text(state.terminalFeedback.text, W / 2, by + bh + 30, {
+        size: 15,
+        align: 'center',
+        color: state.terminalFeedback.ok ? '#39ff14' : '#ff3b30',
+      });
+    }
+
+    this.drawCrtOverlay(state);
+  }
+
+  // ------------------------------------------------------------- telas
+  _screenBase(title, subtitle, color = '#39ff14') {
+    const { ctx } = this;
+    ctx.fillStyle = '#050705';
+    ctx.fillRect(0, 0, W, H);
+    this._text(title, W / 2, 150, { size: 44, align: 'center', color });
+    if (subtitle) {
+      this._text(subtitle, W / 2, 190, { size: 15, align: 'center', color: '#7d8f79', glow: false });
+    }
+  }
+
+  drawMenu() {
+    this._screenBase('ROTA DE FUGA', 'MARCO ZERO');
+    const lines = [
+      'Você é um engenheiro civil. Não tem arma, não sabe lutar.',
+      'Tem um diário, uma lanterna e a matemática dos militares.',
+      '',
+      'Vasculhe cada setor, encontre as variáveis, resolva a expressão',
+      'no terminal e cruze a comporta antes que os saqueadores cheguem.',
+      '',
+      'WASD/setas mover   ·   E interagir   ·   ENTER confirmar   ·   M áudio',
+    ];
+    lines.forEach((l, i) => {
+      this._text(l, W / 2, 250 + i * 24, { size: 15, align: 'center', color: '#9fb39a', glow: false });
+    });
+    const blink = Math.floor(this.time * 1.6) % 2;
+    if (blink) {
+      this._text('[ PRESSIONE QUALQUER TECLA PARA INICIAR ]', W / 2, 470,
+        { size: 17, align: 'center' });
+    }
+    this.drawCrtOverlay(null);
+  }
+
+  drawBriefing(level, elapsed) {
+    const { ctx } = this;
+    ctx.fillStyle = '#050705';
+    ctx.fillRect(0, 0, W, H);
+
+    this._text(`SETOR ${level.sector}`, W / 2, 180, { size: 20, align: 'center', color: '#cc5500' });
+    this._text(level.name, W / 2, 225, { size: 34, align: 'center' });
+
+    // efeito de máquina de escrever no texto de briefing
+    const chars = Math.floor(elapsed * 48);
+    const text = level.def.brief.slice(0, chars);
+    const words = text.split(' ');
+    const lines = [];
+    let line = '';
+    ctx.font = '15px monospace';
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (ctx.measureText(test).width > 560) { lines.push(line); line = word; } else { line = test; }
+    }
+    if (line) lines.push(line);
+    lines.forEach((l, i) => {
+      this._text(l, W / 2, 300 + i * 24, { size: 15, align: 'center', color: '#9fb39a', glow: false });
+    });
+
+    if (elapsed > 1.2) {
+      const blink = Math.floor(this.time * 1.8) % 2;
+      if (blink) this._text('[ ENTER PARA ENTRAR NO SETOR ]', W / 2, 460, { size: 16, align: 'center' });
+    }
+    this.drawCrtOverlay(null);
+  }
+
+  drawGameOver(reason, sector) {
+    this._screenBase('SINAL PERDIDO', null, '#ff3b30');
+    this._text(reason, W / 2, 230, { size: 17, align: 'center', color: '#c9a09a', glow: false });
+    this._text(`Setor ${sector}`, W / 2, 270, { size: 14, align: 'center', color: '#6f7d6c', glow: false });
+    const blink = Math.floor(this.time * 1.6) % 2;
+    if (blink) this._text('[ ENTER PARA TENTAR NOVAMENTE ]', W / 2, 400, { size: 16, align: 'center' });
+    this.drawCrtOverlay(null);
+  }
+
+  drawVictory(stats) {
+    this._screenBase('MARCO ZERO', 'COMPORTA FINAL LIBERADA');
+    const lines = [
+      'O duto de ventilação profunda se abre para o ar frio da superfície.',
+      'Atrás de você, as luzes do bunker se apagam setor por setor.',
+      '',
+      `Tempo total de fuga: ${formatTime(stats.totalTime)}`,
+      `Códigos decifrados: ${stats.solved}/5`,
+      `Tentativas incorretas: ${stats.wrong}`,
+    ];
+    lines.forEach((l, i) => {
+      this._text(l, W / 2, 260 + i * 26, { size: 15, align: 'center', color: '#9fb39a', glow: false });
+    });
+    const blink = Math.floor(this.time * 1.6) % 2;
+    if (blink) this._text('[ ENTER PARA JOGAR NOVAMENTE ]', W / 2, 470, { size: 16, align: 'center' });
+    this.drawCrtOverlay(null);
+  }
+}
+
+
+// ===== src/data/levels.js =====
+/**
+ * Dados dos 5 setores do bunker.
+ *
+ * Cada setor é definido por um mapa em texto (30 x 17 tiles) mais os dados do
+ * puzzle. A progressão matemática segue exatamente a tabela do GDD:
+ *
+ *   1 Enfermaria        adição e subtração                x = A + B
+ *   2 Alojamentos       parênteses e regra de sinais      x = (A * B) - 15
+ *   3 Sala de Máquinas  equação de 1º grau                2x + A = B
+ *   4 Centro de Comando potência e prioridade             x = A² - (B * 4)
+ *   5 Zona de Quarentena álgebra + tempo agressivo        x = (A * B) / 3 + C
+ *
+ * LEGENDA DO MAPA
+ *   #  parede de concreto        .  piso livre
+ *   C  caixote (bloqueia)        ~  escombros (bloqueia)
+ *   R  poça de radiação          T  terminal CRT (interativo)
+ *   D  comporta blindada         P  posição inicial do jogador
+ *   1..4  objeto com pista (índice em `clues`)
+ */
+
+const MAP_W = 30;
+const MAP_H = 17;
+
+const LEVELS = [
+  // ------------------------------------------------------------ SETOR 1
+  {
+    sector: 1,
+    name: 'ENFERMARIA',
+    brief: 'Os geradores caíram há três dias. A comporta leste ainda responde. '
+         + 'Os prontuários da enfermaria guardam os códigos de turno.',
+    threatTime: 190,
+    map: [
+      '##############################',
+      '#..........#........#........#',
+      '#..P.......#...1....#...CC...#',
+      '#..........#........#...CC...#',
+      '#...CC.....#........#........#',
+      '#...CC.......................#',
+      '#..........#........#........#',
+      '#....................#.......#',
+      '#..####....#####.....#.......#',
+      '#..#.......#...#.....#..~~...#',
+      '#..#..RR...#...#........~~...#',
+      '#..#..RR...#...#.............#',
+      '#..#.......#####.......T.....#',
+      '#..#.........................D',
+      '#..#....2....#####...........#',
+      '#.......................CC...#',
+      '##############################',
+    ],
+    clues: [
+      { key: 'A', value: 7, prop: 'chart',
+        text: 'PRONTUÁRIO 041 — "Turno A: 7 pacientes estáveis. Código de turno = A."' },
+      { key: 'B', value: 5, prop: 'chart',
+        text: 'PRONTUÁRIO 088 — "Leito B: 5 doses restantes. Código de leito = B."' },
+    ],
+    puzzle: {
+      display: 'X = A + B',
+      answer: 12,
+      hint: 'Some os dois valores registrados nos prontuários.',
+      terminalHeader: 'COMPORTA 1-E // PROTOCOLO DE TURNO',
+    },
+  },
+
+  // ------------------------------------------------------------ SETOR 2
+  {
+    sector: 2,
+    name: 'ALOJAMENTOS',
+    brief: 'Beliches revirados, armários arrombados. Alguém saiu com pressa — '
+         + 'e deixou o código anotado em pedaços.',
+    threatTime: 165,
+    map: [
+      '##############################',
+      '#....#........#........#.....#',
+      '#.P..#...CC...#...1....#..~~.#',
+      '#....#...CC...#........#..~~.#',
+      '#....#........#........#.....#',
+      '#............................#',
+      '#....#........#........#.....#',
+      '#....#..RRR...#...CC...#.....#',
+      '#....#..RRR...#...CC...#..2..#',
+      '#....#........#........#.....#',
+      '#............................#',
+      '#....#........#........#.....#',
+      '#....#...~~...#........#.....#',
+      '#....#...~~...#...CC...#..T..#',
+      '#....#........#...CC...#.....#',
+      '#....#........#........#.....D',
+      '##############################',
+    ],
+    clues: [
+      { key: 'A', value: 5, prop: 'locker',
+        text: 'BILHETE NO ARMÁRIO — "Atenção esquadrão: a variável A é igual a 5."' },
+      { key: 'B', value: -2, prop: 'tape',
+        text: 'FITA CASSETE — sob a etiqueta B, rabiscado a caneta: "-2".' },
+    ],
+    puzzle: {
+      display: 'X = (A * B) - 15',
+      answer: -25,
+      hint: 'Resolva primeiro o que está entre parênteses. Atenção à regra de sinais.',
+      terminalHeader: 'COMPORTA 2-N // ALOJAMENTO OFICIAIS',
+    },
+  },
+
+  // ------------------------------------------------------------ SETOR 3
+  {
+    sector: 3,
+    name: 'SALA DE MÁQUINAS',
+    brief: 'Os geradores ainda giram no vazio. O vazamento no centro da sala '
+         + 'obriga a contornar pelo perímetro.',
+    threatTime: 150,
+    map: [
+      '##############################',
+      '#............................#',
+      '#.P....CC..............CC....#',
+      '#......CC....RRRR......CC....#',
+      '#............RRRR............#',
+      '#...1........RRRR........~~..#',
+      '#............RRRR........~~..#',
+      '#..####......RRRR......####..#',
+      '#..#.........................#',
+      '#..####................####..#',
+      '#............RRRR............#',
+      '#....~~......RRRR............#',
+      '#....~~......RRRR....2.......#',
+      '#............RRRR............#',
+      '#......CC..............CC..T.#',
+      '#......CC..............CC....D',
+      '##############################',
+    ],
+    clues: [
+      { key: 'A', value: 4, prop: 'panel',
+        text: 'PAINEL ELÉTRICO — etiqueta de calibração: "A = 4 (offset da bomba)".' },
+      { key: 'B', value: 18, prop: 'chart',
+        text: 'ORDEM DE SERVIÇO — "Pressão nominal B = 18 bar. Não exceder."' },
+    ],
+    puzzle: {
+      display: '2X + A = B',
+      answer: 7,
+      hint: 'Isole X: subtraia A dos dois lados e depois divida por 2.',
+      terminalHeader: 'COMPORTA 3-S // CONTROLE DE PRESSÃO',
+    },
+  },
+
+  // ------------------------------------------------------------ SETOR 4
+  {
+    sector: 4,
+    name: 'CENTRO DE COMANDO',
+    brief: 'Mapas de guerra ainda pregados na parede. As batidas na comporta '
+         + 'norte estão mais próximas do que na sala anterior.',
+    threatTime: 135,
+    map: [
+      '##############################',
+      '#......#..............#......#',
+      '#..P...#....CC..CC....#...1..#',
+      '#......#....CC..CC....#......#',
+      '#......#..............#......#',
+      '#............................#',
+      '#......#..............#......#',
+      '#..~~..#...RR....RR...#..CC..#',
+      '#..~~..#...RR....RR...#..CC..#',
+      '#......#..............#......#',
+      '#............................#',
+      '#......#..............#......#',
+      '#..2...#....CC..CC....#......#',
+      '#......#....CC..CC....#..T...#',
+      '#......#..............#......#',
+      '#......#..............#......D',
+      '##############################',
+    ],
+    clues: [
+      { key: 'A', value: 6, prop: 'panel',
+        text: 'MAPA TÁTICO — "Esquadrão A: 6 unidades no perímetro."' },
+      { key: 'B', value: 5, prop: 'tape',
+        text: 'GRAVAÇÃO DE COMANDO — "...repito, setor B, nível cinco. B = 5."' },
+    ],
+    puzzle: {
+      display: 'X = A² - (B * 4)',
+      answer: 16,
+      hint: 'A² significa A multiplicado por ele mesmo. Resolva a potência antes da subtração.',
+      terminalHeader: 'COMPORTA 4-C // CRIPTOGRAFIA MILITAR',
+    },
+  },
+
+  // ------------------------------------------------------------ SETOR 5
+  {
+    sector: 5,
+    name: 'ZONA DE QUARENTENA — MARCO ZERO',
+    brief: 'Radiação extrema. Os dutos de ventilação profunda ficam depois da '
+         + 'última comporta. É a saída — ou o fim da linha.',
+    threatTime: 110,
+    map: [
+      '##############################',
+      '#.....RR..............RR.....#',
+      '#..P..RR....1.........RR.....#',
+      '#.....RR..............RR.....#',
+      '#............................#',
+      '#..####..RRRR....RRRR..####..#',
+      '#..#..................C...#..#',
+      '#..#...2..........3.......#..#',
+      '#.............................',
+      '#..#......................#..#',
+      '#..#...~~........~~.......#..#',
+      '#..####..RRRR....RRRR..####..#',
+      '#............................#',
+      '#.....RR..............RR..T..#',
+      '#.....RR..............RR.....#',
+      '#.....RR..............RR.....D',
+      '##############################',
+    ],
+    clues: [
+      { key: 'A', value: 9, prop: 'panel',
+        text: 'MEDIDOR DE CONTENÇÃO — "Nível A: 9. Evacuação obrigatória."' },
+      { key: 'B', value: 4, prop: 'body',
+        text: 'CRACHÁ NA MÃO DO TÉCNICO — setor B, ala 4. B = 4.' },
+      { key: 'C', value: 7, prop: 'tape',
+        text: 'ÚLTIMA TRANSMISSÃO — "Duto sete. Repito: duto sete. C = 7."' },
+    ],
+    puzzle: {
+      display: 'X = (A * B) / 3 + C',
+      answer: 19,
+      hint: 'Multiplique, divida e só então some C.',
+      terminalHeader: 'COMPORTA 5-Q // MARCO ZERO // ÚLTIMO SELO',
+    },
+  },
+];
+
+
+// ===== src/game/game.js =====
+/**
+ * Máquina de estados do jogo e laço principal.
+ *
+ * Estados: MENU -> BRIEFING -> PLAYING <-> TERMINAL -> (GAMEOVER | próximo setor) -> VICTORY
+ *
+ * O laço usa delta time fixado em no máximo 50 ms por quadro, para que uma
+ * eventual travada do navegador não teleporte o jogador através das paredes.
+ */
+
+
+const State = {
+  MENU: 'MENU',
+  BRIEFING: 'BRIEFING',
+  PLAYING: 'PLAYING',
+  TERMINAL: 'TERMINAL',
+  GAMEOVER: 'GAMEOVER',
+  VICTORY: 'VICTORY',
+};
+
+class Game {
+  constructor(canvas, dom) {
+    buildSprites();
+    this.renderer = new Renderer(canvas);
+    this.input = new Input();
+    this.audio = new AudioEngine();
+    this.dom = dom;
+
+    this.state = State.MENU;
+    this.levelIndex = 0;
+    this.stats = { totalTime: 0, solved: 0, wrong: 0 };
+    this.toast = null;
+    this.toastTimer = 0;
+    this.stateTime = 0;
+    this.terminalFeedback = null;
+    this.gameOverReason = '';
+    this.lastTime = performance.now();
+    this.fpsAcc = 0;
+    this.fpsFrames = 0;
+
+    this._syncPanel();
+  }
+
+  // ------------------------------------------------------------ ciclo de vida
+  start() {
+    requestAnimationFrame((t) => this._frame(t));
+  }
+
+  loadLevel(index) {
+    this.levelIndex = index;
+    this.level = new Level(LEVELS[index]);
+    this.journal = new Journal();
+    this.player = new Player(this.level);
+    this.threat = new Threat(LEVELS[index].threatTime);
+    this.terminal = new Terminal(this.level, this.journal);
+    this.state = State.BRIEFING;
+    this.stateTime = 0;
+    this.toast = null;
+    this.terminalFeedback = null;
+    this._syncPanel();
+  }
+
+  restart() {
+    this.stats = { totalTime: 0, solved: 0, wrong: 0 };
+    this.loadLevel(0);
+  }
+
+  // ------------------------------------------------------------ laço principal
+  _frame(now) {
+    const dt = Math.min(0.05, (now - this.lastTime) / 1000);
+    this.lastTime = now;
+
+    this._update(dt);
+    this._render(dt);
+    this.input.endFrame();
+
+    // contador de FPS (amostrado a cada meio segundo)
+    this.fpsAcc += dt;
+    this.fpsFrames++;
+    if (this.fpsAcc >= 0.5) {
+      this.dom.fps.textContent = `${Math.round(this.fpsFrames / this.fpsAcc)} FPS`;
+      this.fpsAcc = 0;
+      this.fpsFrames = 0;
+    }
+
+    requestAnimationFrame((t) => this._frame(t));
+  }
+
+  _update(dt) {
+    this.stateTime += dt;
+    this.audio.update(dt);
+
+    // O áudio só pode iniciar após uma interação do usuário.
+    if (this.input.anyPressed()) this.audio.start();
+    if (this.input.wasPressed('KeyM')) {
+      const on = this.audio.toggle();
+      this._say(on ? 'Áudio ligado.' : 'Áudio desligado.', '#7d8f79');
+    }
+
+    if (this.toastTimer > 0) {
+      this.toastTimer -= dt;
+      if (this.toastTimer <= 0) this.toast = null;
+    }
+
+    switch (this.state) {
+      case State.MENU:
+        if (this.input.anyPressed() && !this.input.wasPressed('KeyM')) this.loadLevel(0);
+        break;
+
+      case State.BRIEFING:
+        if (this.stateTime > 1.2 && (this.input.wasPressed('Enter') || this.input.wasPressed('Space'))) {
+          this.state = State.PLAYING;
+          this.stateTime = 0;
+          this._say(`Setor ${this.level.sector}. Localize as variáveis e o terminal.`);
+        }
+        break;
+
+      case State.PLAYING:
+        this._updatePlaying(dt);
+        break;
+
+      case State.TERMINAL:
+        this._updateTerminal(dt);
+        break;
+
+      case State.GAMEOVER:
+      case State.VICTORY:
+        if (this.input.wasPressed('Enter')) this.restart();
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  _updatePlaying(dt) {
+    this.stats.totalTime += dt;
+
+    const result = this.player.update(dt, this.input, this.level, this.audio);
+    if (result.dead) {
+      this._gameOver('Contaminação letal. A barra RAD saturou e o corpo cedeu.');
+      return;
+    }
+
+    const threatResult = this.threat.update(dt, { inCover: this.player.inCover }, this.audio);
+    if (threatResult.breached) {
+      this._gameOver('Os saqueadores arrombaram a comporta antes de você abrir a saída.');
+      return;
+    }
+
+    // interação (E)
+    if (this.input.wasPressed('KeyE')) {
+      const target = this.level.interactableAt(this.player.x, this.player.y);
+      if (target && target.type === 'prop') {
+        this._collect(target.prop);
+      } else if (target && target.type === 'terminal') {
+        this._openTerminal();
+      }
+    }
+
+    // saída do setor
+    if (this.level.atExit(this.player.x, this.player.y)) this._nextLevel();
+
+    this._syncPanel();
+  }
+
+  _updateTerminal(dt) {
+    this.player.hacking = true;
+    this.stats.totalTime += dt;
+    // O tempo continua correndo enquanto o jogador calcula — é o coração da tensão.
+    // Usa o delta real do quadro: um passo fixo de 1/60 s fazia o relógio correr
+    // 2x mais rápido em monitores de 120 Hz e 3x em 180 Hz.
+    const threatResult = this.threat.update(dt, { inCover: true }, this.audio);
+    if (threatResult.breached) {
+      this._closeTerminal();
+      this._gameOver('Eles chegaram enquanto você ainda digitava o código.');
+      return;
+    }
+    if (this.input.wasPressed('Escape')) this._closeTerminal();
+    this._syncPanel();
+  }
+
+  // ------------------------------------------------------------ ações
+  _collect(prop) {
+    prop.collected = true;
+    this.journal.add(prop.clue.key, prop.clue.value);
+    this.audio.pickup();
+    this._say(prop.clue.text, '#c8f5bd', 5.5);
+    this.player.hacking = false;
+    this._syncPanel();
+  }
+
+  _openTerminal() {
+    this.terminal.openTerminal();
+    this.state = State.TERMINAL;
+    this.terminalFeedback = null;
+    this.player.hacking = true;
+    this.audio.keyboardClick();
+    this.input.setTextMode(true, (value) => this._submitCode(value));
+  }
+
+  _closeTerminal() {
+    this.terminal.close();
+    this.input.setTextMode(false);
+    this.player.hacking = false;
+    this.state = State.PLAYING;
+  }
+
+  _submitCode(value) {
+    const result = this.terminal.submit(value);
+    this.audio.keyboardClick();
+
+    if (result.status === 'ok') {
+      this.stats.solved++;
+      this.audio.hydraulicUnlock();
+      this.terminalFeedback = { text: result.message, ok: true };
+      setTimeout(() => {
+        if (this.state === State.TERMINAL) this._closeTerminal();
+        this._say('Comporta destrancada. Vá para a saída — leste do setor.', '#39ff14', 5);
+      }, 900);
+    } else if (result.status === 'wrong') {
+      this.stats.wrong++;
+      this.threat.penalize(10);
+      this.audio.error();
+      this.renderer.kick(9);
+      this.terminalFeedback = { text: result.message, ok: false };
+      this.input.textBuffer = '';
+    } else {
+      this.audio.error();
+      this.terminalFeedback = { text: result.message, ok: false };
+      this.input.textBuffer = '';
+    }
+  }
+
+  _nextLevel() {
+    this.audio.hydraulicUnlock();
+    if (this.levelIndex + 1 >= LEVELS.length) {
+      this.state = State.VICTORY;
+      this.stateTime = 0;
+      this.audio.pulseBpm = 0;
+      this.audio.geigerRate = 0;
+      this.audio.victory();
+    } else {
+      this.loadLevel(this.levelIndex + 1);
+    }
+  }
+
+  _gameOver(reason) {
+    this.gameOverReason = reason;
+    this.state = State.GAMEOVER;
+    this.stateTime = 0;
+    this.audio.pulseBpm = 0;
+    this.audio.geigerRate = 0;
+    this.input.setTextMode(false);
+    this.renderer.kick(14);
+  }
+
+  _say(text, color = '#c8f5bd', seconds = 3.5) {
+    this.toast = { text, color };
+    this.toastTimer = seconds;
+    this.dom.status.textContent = text.length > 70 ? `${text.slice(0, 70)}...` : text;
+  }
+
+  // ------------------------------------------------------------ painel lateral (DOM)
+  _syncPanel() {
+    const { dom } = this;
+    if (!this.level) return;
+
+    dom.sectorLabel.textContent = `SETOR ${this.level.sector}`;
+    dom.journalSector.textContent = this.level.name;
+
+    const entries = this.journal.entries();
+    dom.journalVars.innerHTML = entries.length
+      ? entries.map((e) => `<li>${e.key} = ${e.value}</li>`).join('')
+      : '<li class="empty">nenhuma variável coletada</li>';
+
+    const missing = this.terminal.missingVariables();
+    dom.journalGoal.textContent = this.level.doorUnlocked
+      ? 'Comporta liberada. Alcance a saída a leste.'
+      : missing.length
+        ? `Localizar variável ${missing.join(', ')} e acessar o terminal.`
+        : `Resolver ${this.level.def.puzzle.display} no terminal.`;
+
+    const state = this.threat.state.toLowerCase();
+    dom.threatState.className = `threat ${state}`;
+    dom.threatState.textContent = this.threat.label();
+    dom.threatBar.style.width = `${this.threat.ratio * 100}%`;
+    dom.threatBar.style.background = this.threat.ratio < 0.35 ? '#ff3b30' : '#39ff14';
+  }
+
+  // ------------------------------------------------------------ desenho
+  _render(dt) {
+    switch (this.state) {
+      case State.MENU:
+        this.renderer.drawMenu();
+        break;
+      case State.BRIEFING:
+        this.renderer.drawBriefing(this.level, this.stateTime);
+        break;
+      case State.PLAYING:
+        this.renderer.drawWorld(this._renderState(), dt);
+        break;
+      case State.TERMINAL:
+        this.renderer.drawWorld(this._renderState(), dt);
+        this.renderer.drawTerminal({
+          ...this._renderState(),
+          inputBuffer: this.input.textBuffer,
+          terminalFeedback: this.terminalFeedback,
+        });
+        break;
+      case State.GAMEOVER:
+        this.renderer.drawGameOver(this.gameOverReason, this.level.sector);
+        break;
+      case State.VICTORY:
+        this.renderer.drawVictory(this.stats);
+        break;
+      default:
+        break;
+    }
+  }
+
+  _renderState() {
+    return {
+      level: this.level,
+      player: this.player,
+      threat: this.threat,
+      terminal: this.terminal,
+      toast: this.toast,
+    };
+  }
+}
+
+
+// ===== src/main.js =====
+/**
+ * Ponto de entrada — Rota de Fuga: Marco Zero
+ * PAC Extensionista / Engenharia de Software — Centro Universitário Católica de SC.
+ *
+ * Liga o DOM da página ao objeto Game e inicia o laço de renderização.
+ */
+
+
+const dom = {
+  canvas: document.getElementById('screen'),
+  sectorLabel: document.getElementById('sector-label'),
+  journalSector: document.getElementById('journal-sector'),
+  journalVars: document.getElementById('journal-vars'),
+  journalGoal: document.getElementById('journal-goal'),
+  threatState: document.getElementById('threat-state'),
+  threatBar: document.querySelector('#threat-bar i'),
+  status: document.getElementById('status-msg'),
+  fps: document.getElementById('fps'),
+};
+
+const game = new Game(dom.canvas, dom);
+game.start();
+
+// Exposto para depuração no console do navegador (ex.: window.jogo.stats).
+window.jogo = game;
+
+
+// A página precisa receber o foco para capturar o teclado (e liberar o áudio).
+var aviso = document.getElementById('aviso-foco');
+function ativar() {
+  aviso.remove();
+  window.focus();
+  document.body.focus();
+}
+aviso.addEventListener('click', ativar);
+document.addEventListener('keydown', function once() {
+  if (aviso.isConnected) ativar();
+  document.removeEventListener('keydown', once);
+});
+})();
+</script>
+</head>
+</html>

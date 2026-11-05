@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rota de Fuga: Marco Zero</title>
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <div id="shell">
+    <header id="topbar">
+      <span class="brand">ROTA DE FUGA<span class="dim">: MARCO ZERO</span></span>
+      <span id="sector-label" class="dim">SETOR --</span>
+    </header>
+
+    <div id="stage">
+      <canvas id="screen" width="960" height="544"></canvas>
+
+      <!-- Painel lateral: diário do engenheiro -->
+      <aside id="journal">
+        <h2>DIÁRIO</h2>
+        <div id="journal-sector" class="j-sector">--</div>
+        <ul id="journal-vars"><li class="empty">nenhuma variável coletada</li></ul>
+        <div class="j-block">
+          <h3>OBJETIVO</h3>
+          <p id="journal-goal">Localizar o terminal da comporta.</p>
+        </div>
+        <div class="j-block">
+          <h3>AMEAÇA</h3>
+          <div id="threat-state" class="threat afar">DISTANTE</div>
+          <div id="threat-bar"><i></i></div>
+        </div>
+        <div class="j-block">
+          <h3>CONTROLES</h3>
+          <p class="keys">WASD / setas &mdash; mover<br>E &mdash; inspecionar<br>ENTER &mdash; confirmar código<br>ESC &mdash; sair do terminal<br>M &mdash; áudio on/off</p>
+        </div>
+      </aside>
+    </div>
+
+    <footer id="statusbar">
+      <span id="status-msg">Aguardando comandos...</span>
+      <span id="fps" class="dim"></span>
+    </footer>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

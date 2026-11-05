@@ -1,0 +1,21 @@
+{
+  "name": "rota-de-fuga-marco-zero",
+  "version": "1.0.0-n1",
+  "description": "Jogo sério 2D top-down de sobrevivência e puzzle matemático — PAC Extensionista, Engenharia de Software, Centro Universitário Católica de Santa Catarina.",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes http-server . -p 8080 -c-1 -o",
+    "build": "node tools/build-standalone.mjs",
+    "validate": "node tools/validate-levels.mjs",
+    "record": "node tools/record-gameplay.mjs",
+    "test": "node tools/smoke-test.mjs",
+    "test:shots": "node tools/smoke-test.mjs --shots"
+  },
+  "keywords": ["serious-game", "puzzle", "matematica", "canvas", "pac-extensionista"],
+  "author": "Ruan Pablo Amaral; Ana Beatriz Adriano da Silva",
+  "license": "UNLICENSED",
+  "private": true,
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}

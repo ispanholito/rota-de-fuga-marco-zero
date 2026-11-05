@@ -1,0 +1,5 @@
+node_modules/
+dist/video/
+dist/*.mp4
+.DS_Store
+Thumbs.db
